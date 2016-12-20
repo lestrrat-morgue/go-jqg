@@ -57,6 +57,7 @@ func lexExpr(ctx context.Context, ch chan Item, rdr *StringReader) lexFn {
 	r, _, err := rdr.PeekRune()
 	if err != nil {
 		if err == io.EOF {
+			emit(ctx, ch, Item{Type: token.EOF})
 			return nil
 		}
 		emit(ctx, ch, Item{Type: token.ILLEGAL, Value: errors.Wrap(err, `lexExpr: PeekRune`)})
@@ -94,7 +95,9 @@ func lexFilter(ctx context.Context, ch chan Item, rdr *StringReader) lexFn {
 	rdr.SkipSpaces()
 	r, _, err = rdr.PeekRune()
 	if err != nil {
-		if err != io.EOF {
+		if err == io.EOF {
+			emit(ctx, ch, Item{Type: token.EOF})
+		} else {
 			emit(ctx, ch, Item{Type: token.ILLEGAL, Value: errors.Wrap(err, `lexFilter: PeekRune`)})
 		}
 		return nil
@@ -121,7 +124,9 @@ func lexConnectorOrFilter(ctx context.Context, ch chan Item, rdr *StringReader) 
 
 	r, _, err := rdr.PeekRune()
 	if err != nil {
-		if err != io.EOF {
+		if err == io.EOF {
+			emit(ctx, ch, Item{Type: token.EOF})
+		} else {
 			emit(ctx, ch, Item{Type: token.ILLEGAL, Value: err})
 		}
 		return nil
@@ -151,8 +156,12 @@ func lexIdentField(ctx context.Context, ch chan Item, rdr *StringReader) lexFn {
 
 	for {
 		r, _, err := rdr.PeekRune()
-		if err != nil && err != io.EOF {
-			emit(ctx, ch, Item{Type: token.ILLEGAL, Value: err})
+		if err != nil {
+			if err == io.EOF {
+				emit(ctx, ch, Item{Type: token.EOF})
+			} else {
+				emit(ctx, ch, Item{Type: token.ILLEGAL, Value: err})
+			}
 			return nil
 		}
 		if !unicode.IsLetter(r) {
@@ -302,11 +311,7 @@ func acceptNumber(ctx context.Context, ch chan Item, rdr *StringReader) error {
 			if err != nil {
 				return err
 			}
-			select {
-			case <-ctx.Done():
-				return errors.New("canceled")
-			case ch <- Item{Type: token.INT, Value: v}:
-			}
+			emit(ctx, ch, Item{Type: token.INT, Value: v})
 			return nil
 		}
 		rdr.ReadRune()
@@ -321,11 +326,7 @@ func maybeQuestion(ctx context.Context, ch chan Item, rdr *StringReader) error {
 	}
 
 	if r == '?' {
-		select {
-		case <-ctx.Done():
-			return errors.New("canceled")
-		case ch <- Item{Type: token.QUESTION}:
-		}
+		emit(ctx, ch, Item{Type: token.QUESTION})
 		rdr.ReadRune()
 	}
 	return nil
