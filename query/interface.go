@@ -1,11 +1,4 @@
 package query
 
-import "github.com/lestrrat/go-jqg/token"
-
 type Query struct {
-}
-
-type Item struct {
-	Type  token.Token
-	Value interface{}
 }
