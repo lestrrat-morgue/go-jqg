@@ -1,6 +1,6 @@
 package query
 
-import "github.com/lestrrat/jqg/token"
+import "github.com/lestrrat/go-jqg/token"
 
 type Query struct {
 }

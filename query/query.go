@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/lestrrat/jqg/token"
+	"github.com/lestrrat/go-jqg/token"
 )
 
 type filter interface {
